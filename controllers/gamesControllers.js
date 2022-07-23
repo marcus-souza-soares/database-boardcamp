@@ -1,21 +1,24 @@
 import joi from 'joi';
 import connection from '../db/db.js';
+import gameSchema from '../schemas/gameSchema.js'
 
 export async function getGames(req, res) {
-    const name = req.query.name;
+    const { name } = req.query;
     console.log(name)
     try {
         if (name) {
-            const { rows: games } = await connection.query(
-                "SELECT * FROM games WHERE name LIKE '$1%'", [name]
-            );
-            res.send(games);
-        } else {
-            const { rows: games } = await connection.query(
-                "SELECT * FROM games;"
-            );
-            res.send(games);
+            const query = `SELECT * FROM games WHERE name LIKE '${name}%'`
+            const { rows: gamesBYStr } = await connection.query(
+                query);
+            console.log(gamesBYStr)
+            return res.send(gamesBYStr);
         }
+
+        const { rows: games } = await connection.query(
+            "SELECT * FROM games;"
+        );
+        return res.send(games);
+
 
     } catch (error) {
         res.status(404).send(error);
@@ -31,17 +34,9 @@ export async function postGames(req, res) {
         if (categoriesIdsServer.length < 1) {
             return res.sendStatus(409)
         }
-        const schemaGames = joi.object(
-            {
-                name: joi.string().required(),
-                image: joi.string().required(),
-                stockTotal: joi.number().min(1),
-                categoryId: joi.number().required(),
-                pricePerDay: joi.number().min(1).required(),
-            }
-        );
+        
 
-        const { error } = schemaGames.validate(gameData);
+        const { error } = gameSchema.validate(gameData);
 
         if (error) {
             return res.sendStatus(400);
