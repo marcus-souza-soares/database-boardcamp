@@ -1,4 +1,6 @@
 import connection from "../db/db.js";
+import rentalSchema from "../schemas/rentalsSchema.js"
+import dayjs from 'dayjs';
 
 export async function getRentals(req, res) {
     const { customerId } = req.query;
@@ -16,8 +18,55 @@ export async function getRentals(req, res) {
     }
 }
 export async function postRentals(req, res) {
+    console.log(dayjs().format('YYYY-MM-DD'))
     const dados = req.body;
+
+    const { error } = rentalSchema.validate(dados);
+    if (error) {
+        return res.status(400)
+    }
+    const { customerId, gameId, daysRented } = dados;
+    const { rows: customer } = await connection.query("SELECT * FROM customers WHERE id = $1", [customerId]);
+    const { rows: game } = await connection.query("SELECT * FROM games WHERE id = $1", [gameId]);
+    if (!customer || !game) {
+        return res.status(400);
+    }
+    await connection.query(
+        `INSERT INTO rentals (
+            "customerId", "gameId", "rentDate", "daysRented", "returnDate", "originalPrice", "delayFee"
+        ) VALUES (${customerId}, ${gameId}, '${dayjs().format('YYYY-MM-DD')}', ${daysRented}, ${null}, ${daysRented * game[0].pricePerDay}, ${null})`
+    )
+    res.sendStatus(201);
+}
+
+export async function endedRental(req, res) {
+    const { id } = req.params;
+
+    // console.log(dayjs().add(1, "day"))
+    // console.log(dayjs().diff('2022-07-20','day'))
+    if (isNaN(parseInt(id))) {
+        return res.sendStatus(400);
+    }
+    const { rows: rental } = await connection.query(
+        "SELECT * FROM rentals WHERE id = $1",
+        [id]
+    )
+    if(rental.length < 1){
+        return res.sendStatus(404);
+    }
+    if(rental[0].returnDate){
+        return res.sendStatus(400);
+    }
     
+    const delayFee = dayjs().diff(rental[0].rentDate) <= 0 ? 0 : dayjs().diff(rental[0].rentDate, 'day');
+    console.log(delayFee)
+   
+    await connection.query(
+        `UPDATE rentals SET "returnDate" = $1, "delayFee" = $2 WHERE id = $3`,
+        [`'${dayjs()}'`, (rental[0].originalPrice / rental[0].daysRented) 
+        * (rental[0].daysRented + delayFee), id]
+    )
+    res.sendStatus(200);
 }
 // {
 //     id: 1,
