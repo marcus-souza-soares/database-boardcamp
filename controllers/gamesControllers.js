@@ -5,9 +5,16 @@ import gameSchema from '../schemas/gameSchema.js'
 export async function getGames(req, res) {
     const { name } = req.query;
     console.log(name)
+
+    const str = `
+    SELECT games.*, categories.name as "categoryName"
+    FROM games JOIN 
+    categories 
+    ON games."categotyId" = categories.id`
+
     try {
         if (name) {
-            const query = `SELECT * FROM games WHERE name LIKE '${name}%'`
+            const query = `${str}'${name}%'`
             const { rows: gamesBYStr } = await connection.query(
                 query);
             console.log(gamesBYStr)
@@ -15,7 +22,7 @@ export async function getGames(req, res) {
         }
 
         const { rows: games } = await connection.query(
-            "SELECT * FROM games;"
+            str
         );
         return res.send(games);
 
