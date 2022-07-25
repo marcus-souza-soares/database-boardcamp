@@ -13,7 +13,7 @@ export async function getGames(req, res) {
     ON games."categotyId" = categories.id
     `
 
-    try {
+    //try {
         if (name) {
             const query = `${str}'${name}%'`
             const { rows: gamesBYStr } = await connection.query(
@@ -28,9 +28,9 @@ export async function getGames(req, res) {
         return res.send(games);
 
 
-    } catch (error) {
-        res.status(404).send(error);
-    }
+    // } catch (error) {
+    //     res.status(404).send(error);
+    // }
 }
 
 export async function postGames(req, res) {
