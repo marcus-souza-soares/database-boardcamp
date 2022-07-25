@@ -3,11 +3,12 @@ import rentalSchema from "../schemas/rentalsSchema.js"
 import dayjs from 'dayjs';
 
 export async function getRentals(req, res) {
-    const { customerId } = req.query;
-    const { gameId } = req.query;
+    const { customerId, gameId, status } = req.query;
+    
     let condition = '';
     let condition1 = '';
     let condition2 = '';
+    let condition3 = '';
     const list = [];
     if (customerId) {
         list.push(customerId);
@@ -17,6 +18,10 @@ export async function getRentals(req, res) {
         list.push(gameId);
         condition2 = `rentals."gameId" = $${list.length}`
     }
+
+
+    
+    
     if (list.length === 2) {
         condition = `WHERE ${condition1} AND ${condition2}`
     } else if (list.length === 1) {
@@ -26,6 +31,18 @@ export async function getRentals(req, res) {
             condition = `WHERE ${condition2}`
         }
     }
+
+
+
+    if(status === "open"){
+        condition3 = `rentals."returnDate" IS NULL`
+        condition += `AND ${condition3}`
+    } else if(status === "closed"){
+        condition3 = `rentals."returnDate" IS NOT NULL`
+        condition += `AND ${condition3}`
+    }
+
+
     try {
         const { rows: rentals } = await connection.query(`
                 SELECT 
