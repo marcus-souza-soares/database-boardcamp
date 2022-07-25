@@ -8,9 +8,10 @@ export async function getGames(req, res) {
 
     const str = `
     SELECT games.*, categories.name as "categoryName"
-    FROM games JOIN 
-    categories 
-    ON games."categotyId" = categories.id`
+    FROM categories JOIN 
+    games 
+    ON games."categotyId" = categories.id
+    `
 
     try {
         if (name) {
